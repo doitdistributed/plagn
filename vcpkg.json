@@ -17,6 +17,7 @@
         "openssl",
         "lua",
         "libcoap",
+        "libmodbus",
         "open62541pp",
         "simpleble",
         "amqpcpp"
