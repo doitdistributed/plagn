@@ -29,7 +29,11 @@ jobs:
 
     - name: Install Linux system dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y autoconf autoconf-archive automake libtool
+      run: sudo apt-get update && sudo apt-get install -y autoconf autoconf-archive automake libtool libltdl-dev
+
+    - name: Install macOS system dependencies
+      if: runner.os == 'macOS'
+      run: brew install autoconf autoconf-archive automake libtool
 
     - name: Setup Ninja
       uses: seanmiddleditch/gha-setup-ninja@master
