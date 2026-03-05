@@ -27,12 +27,15 @@ jobs:
           core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
+    - name: Setup Ninja
+      uses: ninja-actions/setup-ninja@v1.1.2
+
     - name: Configure CMake
       shell: bash
       env:
         VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
       run: |
-        cmake -B build \
+        cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
           -DCMAKE_TOOLCHAIN_FILE="$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
