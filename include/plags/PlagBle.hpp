@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagBle.hpp
- * @author plagn AI Assitant
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Holds the PlagBle class
  * @version 0.1
@@ -23,14 +23,22 @@
 #define PLAGBLE_HPP
 
 // std includes
+#include <string>
+#include <optional>
+
+// simpleble includes
+#include <simpleble/SimpleBLE.h>
 
 // own includes
 #include "Plag.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief The PlagBle class is a Plag to interact via Bluetooth Low Energy
- * 
+ * @brief The PlagBle class is a Plag to interact via Bluetooth Low Energy (BLE)
+ *
+ * @details Scans for a BLE peripheral by configured name, connects to it, and subscribes to
+ * a GATT notification characteristic. Incoming notifications are distributed as DatagramUdp
+ * payloads. placeDatagram() writes data to a configured write characteristic.
  */
 class PlagBle : public Plag
 {
@@ -48,11 +56,14 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
-
-private:
     // config parameters
-    
+    std::string m_deviceName;       //!< BLE peripheral name to connect to
+    std::string m_serviceUuid;      //!< GATT service UUID
+    std::string m_notifyCharUuid;   //!< GATT characteristic UUID for notifications
+    std::string m_writeCharUuid;    //!< GATT characteristic UUID for writes
+
     // worker members
+    std::optional<SimpleBLE::Peripheral> m_peripheral; //!< the connected BLE peripheral
 };
 
 #endif // PLAGBLE_HPP

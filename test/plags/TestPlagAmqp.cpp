@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagAmqpTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagAmqp plag(pt, "test_amqp", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_amqp");
+    pt.put("plag1.queueName", "testQueue");
+    PlagAmqp plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

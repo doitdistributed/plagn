@@ -28,8 +28,12 @@ BOOST_AUTO_TEST_SUITE(PlagBleTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagBle plag(pt, "test_ble", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_ble");
+    pt.put("plag1.deviceName", "testDevice");
+    pt.put("plag1.serviceUuid", "0000");
+    pt.put("plag1.rxCharacteristicUuid", "1111");
+    pt.put("plag1.txCharacteristicUuid", "2222");
+    PlagBle plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagWebSocketTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagWebSocket plag(pt, "test_websocket", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_websocket");
+    pt.put("plag1.host", "localhost");
+    PlagWebSocket plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -39,6 +39,29 @@ find_package(Boost REQUIRED COMPONENTS thread chrono date_time regex serializati
 include_directories(${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
 
+# libcoap (installed via vcpkg — has a proper CMake config)
+find_package(libcoap REQUIRED)
+set(LIBS ${LIBS} libcoap::coap-3)
+
+# libmodbus (installed via brew on macOS — use pkg-config)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBMODBUS REQUIRED libmodbus)
+include_directories(${LIBMODBUS_INCLUDE_DIRS})
+link_directories(${LIBMODBUS_LIBRARY_DIRS})
+set(LIBS ${LIBS} ${LIBMODBUS_LIBRARIES})
+
+# open62541pp (OPC UA — vcpkg CMake config)
+find_package(open62541pp REQUIRED)
+set(LIBS ${LIBS} open62541pp::open62541pp)
+
+# simpleble (BLE — vcpkg CMake config)
+find_package(simpleble CONFIG REQUIRED)
+set(LIBS ${LIBS} simpleble::simpleble)
+
+# amqpcpp (AMQP — vcpkg CMake config)
+find_package(amqpcpp REQUIRED)
+set(LIBS ${LIBS} amqpcpp)
+
 file(GLOB SOURCES "src/*.cpp"
                   "src/utils/*.cpp"
                   "src/datagrams/*.cpp"

@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagLoraWan.cpp
- * @author Gerrit Erichsen (saxomophon@gmx.de)
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Implements the PlagLoraWan class
  * @version 0.1

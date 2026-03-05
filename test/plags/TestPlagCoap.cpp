@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagCoapTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagCoap plag(pt, "test_coap", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_coap");
+    pt.put("plag1.host", "localhost");
+    PlagCoap plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -28,8 +28,10 @@ BOOST_AUTO_TEST_SUITE(PlagTcpTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagTcp plag(pt, "test_tcp", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_tcp");
+    pt.put("plag1.remoteIp", "127.0.0.1");
+    pt.put("plag1.port", "8080");
+    PlagTcp plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagMcp.hpp
- * @author plagn AI Assitant
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Holds the PlagMcp class
  * @version 0.1

@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagTcp.cpp
- * @author Gerrit Erichsen (saxomophon@gmx.de)
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Implements the PlagTcp class
  * @version 0.1

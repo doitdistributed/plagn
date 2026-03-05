@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagInfluxDbTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagInfluxDb plag(pt, "test_influxdb", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_influxdb");
+    pt.put("plag1.database", "testdb");
+    PlagInfluxDb plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

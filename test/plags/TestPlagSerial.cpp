@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagSerialTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagSerial plag(pt, "test_serial", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_serial");
+    pt.put("plag1.portName", "/dev/ttyUSB0");
+    PlagSerial plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

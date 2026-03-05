@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagSerial.hpp
- * @author Gerrit Erichsen (saxomophon@gmx.de)
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Holds the PlagSerial class
  * @version 0.1

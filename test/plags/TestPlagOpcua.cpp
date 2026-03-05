@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagOpcuaTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagOpcua plag(pt, "test_opcua", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_opcua");
+    pt.put("plag1.serverUrl", "opc.tcp://localhost:4840");
+    PlagOpcua plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

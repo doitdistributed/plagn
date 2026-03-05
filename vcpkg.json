@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "dependencies": [
         "boost-asio",
+        "boost-beast",
         "boost-chrono",
         "boost-core",
         "boost-date-time",
@@ -14,6 +15,10 @@
         "boost-system",
         "boost-thread",
         "openssl",
-        "lua"
+        "lua",
+        "libcoap",
+        "open62541pp",
+        "simpleble",
+        "amqpcpp"
     ]
 }

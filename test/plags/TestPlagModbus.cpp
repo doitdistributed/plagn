@@ -28,8 +28,9 @@ BOOST_AUTO_TEST_SUITE(PlagModbusTestSuite)
 BOOST_AUTO_TEST_CASE(test_initialization)
 {
     boost::property_tree::ptree pt;
-    PlagModbus plag(pt, "test_modbus", 1);
-    BOOST_CHECK_EQUAL(plag.getName(), "test_modbus");
+    pt.put("plag1.host", "localhost");
+    PlagModbus plag(pt, "plag1", 1);
+    BOOST_CHECK_EQUAL(plag.getName(), "plag1");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

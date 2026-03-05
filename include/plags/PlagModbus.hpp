@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagModbus.hpp
- * @author plagn AI Assitant
+ * @author Bjoern Boettcher (doitdistributed@parallel-ing.net)
  * @contributors:
  * @brief Holds the PlagModbus class
  * @version 0.1
@@ -23,14 +23,23 @@
 #define PLAGMODBUS_HPP
 
 // std includes
+#include <string>
+#include <vector>
+
+// libmodbus includes
+#include <modbus.h>
 
 // own includes
 #include "Plag.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief The PlagModbus class is a Plag to interact via Modbus
- * 
+ * @brief The PlagModbus class is a Plag to interact via Modbus TCP
+ *
+ * @details Acts as a Modbus master (client) over TCP. Connects to a Modbus slave (server),
+ * polls a configured range of holding registers in loopWork(), and distributes the results as
+ * DatagramMap key/value pairs. Incoming DatagramMap datagrams can write values to output
+ * coils or registers on the slave.
  */
 class PlagModbus : public Plag
 {
@@ -48,11 +57,15 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
-
-private:
     // config parameters
-    
+    std::string m_host;         //!< Modbus TCP server host
+    uint16_t m_port;            //!< Modbus TCP server port (default: 502)
+    int m_slaveId;              //!< Modbus slave/unit ID
+    int m_startRegister;        //!< first holding register address to poll
+    int m_registerCount;        //!< number of holding registers to poll
+
     // worker members
+    modbus_t * m_modbusCtx;     //!< libmodbus context
 };
 
 #endif // PLAGMODBUS_HPP

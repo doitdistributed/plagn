@@ -46,7 +46,7 @@ enum PlagType : unsigned int
     BLE,
     Modbus,
     OPCUA,
-    AMQP,
+    AMQPBroker,
     InfluxDb,
     Prometheus,
     LoRaWAN,
