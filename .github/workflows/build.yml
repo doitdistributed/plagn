@@ -28,7 +28,7 @@ jobs:
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
     - name: Setup Ninja
-      uses: ninja-actions/setup-ninja@v1.1.2
+      uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Configure CMake
       shell: bash
