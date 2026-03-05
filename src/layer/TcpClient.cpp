@@ -40,7 +40,7 @@ TcpClient::TcpClient(const std::chrono::milliseconds & timeout,
                      const Plag & parent, const string & serverIP, uint16_t port) try :
     TransportLayer(timeout),
     m_parent(parent),
-    m_endpoint(boost::asio::ip::address::from_string(serverIP), port),
+    m_endpoint(boost::asio::ip::make_address(serverIP), port),
     m_ioContext(),
     m_socket(nullptr),
     m_receiveBuffer(""),
@@ -63,7 +63,7 @@ void TcpClient::connect(const std::chrono::milliseconds & timeout) try
 {
     if (!isConnected())
     {
-        m_ioContext.reset();
+        m_ioContext.restart();
         m_socket.reset(new boost::asio::ip::tcp::socket(m_ioContext));
         m_socket->async_connect(m_endpoint,
                                 boost::bind(&TcpClient::handleBoostConnect, this,

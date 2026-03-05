@@ -196,6 +196,7 @@ bool PlagMqtt::loopWork() try
             return somethingDone;
         }
     }
+    return false;
 }
 catch (exception & e)
 {

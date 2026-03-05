@@ -748,7 +748,7 @@ void MqttClientV5::parseSubAck(const string & content) try
 
     for (const char & flag : flags)
     {
-        if (flag >= 0x80)
+        if (static_cast<unsigned char>(flag) >= 0x80)
         {
             //TODO: implement fail-behaviour
             cout << "Failed subscription: " << to_string(identifier) << endl;
@@ -794,7 +794,7 @@ void MqttClientV5::parseUnsubAck(const string & content) try
 
     for (const char & flag : flags)
     {
-        if (flag >= 0x80)
+        if (static_cast<unsigned char>(flag) >= 0x80)
         {
             //TODO: implement fail-behaviour
             cout << "Failed subscription: " << to_string(identifier) << endl;

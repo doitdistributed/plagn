@@ -93,7 +93,7 @@ void PlagUdp::init() try
     m_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
     m_socket.set_option(boost::asio::socket_base::broadcast(true));
 
-    m_endPoint.address(boost::asio::ip::address_v4::from_string(m_ip));
+    m_endPoint.address(boost::asio::ip::make_address_v4(m_ip));
     m_endPoint.port(m_port);
     
     m_socket.bind(m_endPoint);
@@ -184,14 +184,10 @@ bool PlagUdp::sendOneFromList()
         dataToSend = dynamic_pointer_cast<DatagramUdp>(m_incommingDatagrams.front());
         m_incommingDatagrams.pop_front();
 
-        boost::asio::ip::udp::resolver resolver(m_ioContext);
-        boost::asio::ip::address_v4 ipAddress;
-        ipAddress.from_string(dataToSend->getReceiver());
-        boost::asio::ip::udp::endpoint target(ipAddress,
+        boost::asio::ip::udp::endpoint target(boost::asio::ip::make_address_v4(dataToSend->getReceiver()),
                                               static_cast<uint16_t>(dataToSend->getPort()));
-        boost::asio::ip::udp::resolver::iterator iter = resolver.resolve(target);
         string payload = dataToSend->getPayload();
-        m_socket.send_to(boost::asio::buffer(payload, payload.size()), iter->endpoint());
+        m_socket.send_to(boost::asio::buffer(payload, payload.size()), target);
         
 
         return true;
