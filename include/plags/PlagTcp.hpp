@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagTcp.hpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Holds the PlagTcp class
  * @version 0.1
@@ -23,14 +23,18 @@
 #define PLAGTCP_HPP
 
 // std includes
+#include <string>
 
 // own includes
 #include "Plag.hpp"
+#include "TcpClient.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
  * @brief The PlagTcp class is a Plag to interact via raw TCP sockets
- * 
+ *
+ * @details Acts as a TCP client. Configured with a remote IP and port, it connects and
+ * forwards raw string payloads in both directions.
  */
 class PlagTcp : public Plag
 {
@@ -48,11 +52,12 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
-
-private:
     // config parameters
-    
+    std::string m_remoteIp;     //!< IP address of the remote TCP server
+    uint16_t m_port;            //!< port of the remote TCP server
+
     // worker members
+    std::shared_ptr<TcpClient> m_tcpClient; //!< TCP client transport layer
 };
 
 #endif // PLAGTCP_HPP

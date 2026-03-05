@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagInfluxDb.hpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Holds the PlagInfluxDb class
  * @version 0.1
@@ -23,14 +23,20 @@
 #define PLAGINFLUXDB_HPP
 
 // std includes
+#include <string>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
 #include "Plag.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief The PlagInfluxDb class is a Plag to interact via InfluxDB
- * 
+ * @brief The PlagInfluxDb class is a Plag that writes datagrams to InfluxDB via the HTTP Line Protocol
+ *
+ * @details Translates incoming datagrams into InfluxDB Line Protocol format and POSTs them to
+ * a configured InfluxDB v1/v2 endpoint over plain HTTP (no TLS). Intended as a sink Plag.
  */
 class PlagInfluxDb : public Plag
 {
@@ -48,11 +54,16 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
+    bool postLineProtocol(const std::string & lineData);
 
 private:
     // config parameters
-    
-    // worker members
+    std::string m_host;         //!< InfluxDB host
+    uint16_t m_port;            //!< InfluxDB HTTP port (default: 8086)
+    std::string m_database;     //!< InfluxDB v1 database name (or v2 bucket)
+    std::string m_measurement;  //!< measurement name prefix
+    std::string m_token;        //!< InfluxDB v2 API token (empty = v1 mode)
+    std::string m_org;          //!< InfluxDB v2 org (empty = v1 mode)
 };
 
 #endif // PLAGINFLUXDB_HPP

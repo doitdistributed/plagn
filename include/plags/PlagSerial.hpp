@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagSerial.hpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Holds the PlagSerial class
  * @version 0.1
@@ -23,6 +23,10 @@
 #define PLAGSERIAL_HPP
 
 // std includes
+#include <string>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
 #include "Plag.hpp"
@@ -30,7 +34,9 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @brief The PlagSerial class is a Plag to interact via Serial / UART interfaces
- * 
+ *
+ * @details Opens a serial port (e.g. /dev/ttyUSB0 on Linux, COM1 on Windows), reads incoming
+ * data and sends outgoing string payloads from the datagram queue.
  */
 class PlagSerial : public Plag
 {
@@ -48,11 +54,13 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
-
-private:
     // config parameters
-    
+    std::string m_portName;     //!< OS path to the serial port, e.g. /dev/ttyUSB0
+    uint32_t m_baudRate;        //!< baud rate, e.g. 9600, 115200
+
     // worker members
+    boost::asio::io_context m_ioContext;            //!< boost IO context
+    boost::asio::serial_port m_serialPort;          //!< the serial port connection
 };
 
 #endif // PLAGSERIAL_HPP

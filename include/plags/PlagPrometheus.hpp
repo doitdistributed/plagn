@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagPrometheus.hpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Holds the PlagPrometheus class
  * @version 0.1
@@ -23,14 +23,24 @@
 #define PLAGPROMETHEUS_HPP
 
 // std includes
+#include <map>
+#include <mutex>
+#include <string>
+#include <thread>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
 #include "Plag.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief The PlagPrometheus class is a Plag to interact via Prometheus metrics
- * 
+ * @brief The PlagPrometheus class is a Plag that exposes a /metrics HTTP endpoint for Prometheus
+ *
+ * @details Keeps an in-memory store of metric name/value pairs. When a datagram arrives with
+ * key-value data, it updates the store. A lightweight HTTP server runs on a background thread
+ * serving GET /metrics in the standard Prometheus text exposition format.
  */
 class PlagPrometheus : public Plag
 {
@@ -48,11 +58,20 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
+    void serveMetrics();
+    std::string buildMetricsPayload() const;
+    void handleRequest(boost::asio::ip::tcp::socket socket);
 
 private:
     // config parameters
-    
+    uint16_t m_port;            //!< port to expose /metrics on (default: 9090)
+    std::string m_metricPrefix; //!< optional prefix for all metric names
+
     // worker members
+    std::map<std::string, double> m_metrics;    //!< current metric values
+    mutable std::mutex m_metricsMutex;          //!< guards m_metrics for thread-safe access
+    boost::asio::io_context m_ioContext;        //!< io_context for the metrics HTTP server
+    std::shared_ptr<std::thread> m_serverThread;//!< thread running the acceptor loop
 };
 
 #endif // PLAGPROMETHEUS_HPP

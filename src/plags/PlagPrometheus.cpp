@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagPrometheus.cpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Implements the PlagPrometheus class
  * @version 0.1
@@ -21,13 +21,20 @@
 
 // std include
 #include <iostream>
+#include <sstream>
+#include <string>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
+#include "DatagramUdp.hpp"
 
 // self include
 #include "PlagPrometheus.hpp"
 
 using namespace std;
+using boost::asio::ip::tcp;
 
 /**
  *-------------------------------------------------------------------------------------------------
@@ -43,22 +50,28 @@ PlagPrometheus::PlagPrometheus(const boost::property_tree::ptree & propTree,
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief Destroy the PlagPrometheus object
+ * @brief Destroy the PlagPrometheus object, stops the HTTP metrics server and thread
  * 
  */
 PlagPrometheus::~PlagPrometheus()
 {
     if (!m_stopToken) stopWork();
+    m_ioContext.stop();
+    if (m_serverThread && m_serverThread->joinable())
+    {
+        m_serverThread->join();
+    }
 }
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief reads many optional parameters from config and assigns them to member values
+ * @brief reads configuration: port and optional metric prefix
  * 
  */
 void PlagPrometheus::readConfig() try
 {
-
+    m_port = getOptionalParameter<uint16_t>("port", 9090);
+    m_metricPrefix = getOptionalParameter<string>("metricPrefix", string("plagn_"));
 }
 catch (exception & e)
 {
@@ -70,12 +83,13 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagPrometheus::init() configures the interface
+ * @brief PlagPrometheus::init() starts the background HTTP metrics server thread
  * 
  */
 void PlagPrometheus::init() try
 {
-
+    m_serverThread = make_shared<thread>(&PlagPrometheus::serveMetrics, this);
+    cout << "PlagPrometheus: /metrics available on port " << m_port << endl;
 }
 catch (exception & e)
 {
@@ -87,7 +101,79 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagPrometheus::loopWork regularly reads on the socket, if data popped in or sends data
+ * @brief serveMetrics runs the HTTP acceptor loop in the background thread
+ * 
+ */
+void PlagPrometheus::serveMetrics()
+{
+    try
+    {
+        tcp::acceptor acceptor(m_ioContext,
+                               tcp::endpoint(tcp::v4(), m_port));
+        while (!m_ioContext.stopped())
+        {
+            tcp::socket socket(m_ioContext);
+            acceptor.accept(socket);
+            handleRequest(std::move(socket));
+        }
+    }
+    catch (exception & e)
+    {
+        cerr << "PlagPrometheus metrics server error: " << e.what() << endl;
+    }
+}
+
+/**
+ *-------------------------------------------------------------------------------------------------
+ * @brief handleRequest serves one HTTP GET request by returning all metrics
+ *
+ * @param socket the accepted client socket
+ */
+void PlagPrometheus::handleRequest(tcp::socket socket)
+{
+    try
+    {
+        boost::asio::streambuf requestBuf;
+        boost::asio::read_until(socket, requestBuf, "\r\n\r\n");
+
+        string payload = buildMetricsPayload();
+        string response = "HTTP/1.1 200 OK\r\n"
+                          "Content-Type: text/plain; version=0.0.4\r\n"
+                          "Content-Length: " + to_string(payload.size()) + "\r\n"
+                          "Connection: close\r\n"
+                          "\r\n" + payload;
+
+        boost::asio::write(socket, boost::asio::buffer(response));
+    }
+    catch (exception & e)
+    {
+        cerr << "PlagPrometheus: error handling request: " << e.what() << endl;
+    }
+}
+
+/**
+ *-------------------------------------------------------------------------------------------------
+ * @brief buildMetricsPayload formats all stored metrics in Prometheus text exposition format
+ *
+ * @return std::string the complete /metrics text payload
+ */
+string PlagPrometheus::buildMetricsPayload() const
+{
+    lock_guard<mutex> lock(m_metricsMutex);
+    ostringstream oss;
+    for (const auto & kv : m_metrics)
+    {
+        oss << "# HELP " << kv.first << " Metric exported by plagn\n";
+        oss << "# TYPE " << kv.first << " gauge\n";
+        oss << kv.first << " " << kv.second << "\n";
+    }
+    return oss.str();
+}
+
+/**
+ *-------------------------------------------------------------------------------------------------
+ * @brief PlagPrometheus::loopWork has nothing to do externally — the metrics server runs on its
+ * own thread. This function handles potential incoming placeholder work.
  * 
  */
 bool PlagPrometheus::loopWork() try
@@ -104,13 +190,33 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief placeDatagram is a function to place a Datagram here.
+ * @brief placeDatagram parses key/value pairs from incoming datagrams and updates the metrics store
  *
  * @param datagram A Datagram containing data for this Plag to interprete
  */
 void PlagPrometheus::placeDatagram(const shared_ptr<Datagram> datagram) try
 {
-    
+    // extract numeric float values via the standard Datagram::getData interface
+    // keys are expected to be provided by the Kable's translation and available
+    // as doubles in the DataType variant. Non-numeric keys are silently skipped.
+    // For raw payloads (DatagramUdp), we attempt to parse "key=value" pairs.
+    shared_ptr<DatagramUdp> udpPtr = dynamic_pointer_cast<DatagramUdp>(datagram);
+    if (udpPtr != nullptr)
+    {
+        istringstream stream(udpPtr->getPayload());
+        string pair;
+        lock_guard<mutex> lock(m_metricsMutex);
+        while (getline(stream, pair, ','))
+        {
+            size_t sep = pair.find('=');
+            if (sep != string::npos)
+            {
+                string key = m_metricPrefix + pair.substr(0, sep);
+                double val = stod(pair.substr(sep + 1));
+                m_metrics[key] = val;
+            }
+        }
+    }
 }
 catch (exception & e)
 {

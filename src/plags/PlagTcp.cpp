@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagTcp.cpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Implements the PlagTcp class
  * @version 0.1
@@ -23,6 +23,7 @@
 #include <iostream>
 
 // own includes
+#include "DatagramUdp.hpp"
 
 // self include
 #include "PlagTcp.hpp"
@@ -43,22 +44,38 @@ PlagTcp::PlagTcp(const boost::property_tree::ptree & propTree,
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief Destroy the PlagTcp object
+ * @brief Destroy the PlagTcp object; disconnects the TCP client
  * 
  */
 PlagTcp::~PlagTcp()
 {
     if (!m_stopToken) stopWork();
+    try
+    {
+        if (m_tcpClient && m_tcpClient->isConnected())
+        {
+            m_tcpClient->disconnect();
+        }
+    }
+    catch (exception & e)
+    {
+        cerr << "Could not close PlagTcp, because of " << e.what() << endl;
+    }
+    catch (...)
+    {
+        cerr << "Could not close PlagTcp, because for unknown reason!" << endl;
+    }
 }
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief reads many optional parameters from config and assigns them to member values
+ * @brief reads configuration parameters: remoteIp and port
  * 
  */
 void PlagTcp::readConfig() try
 {
-
+    m_remoteIp = getParameter<string>("remoteIp");
+    m_port = getParameter<uint16_t>("port");
 }
 catch (exception & e)
 {
@@ -70,12 +87,13 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagTcp::init() configures the interface
+ * @brief PlagTcp::init() creates the TCP client and connects to the remote host
  * 
  */
 void PlagTcp::init() try
 {
-
+    m_tcpClient = make_shared<TcpClient>(chrono::milliseconds(1000), *this, m_remoteIp, m_port);
+    m_tcpClient->connect();
 }
 catch (exception & e)
 {
@@ -87,12 +105,42 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagTcp::loopWork regularly reads on the socket, if data popped in or sends data
+ * @brief PlagTcp::loopWork reads incoming data and sends queued outgoing datagrams
  * 
  */
 bool PlagTcp::loopWork() try
 {
-    return false;
+    bool somethingDone = false;
+
+    if (!m_tcpClient->isConnected())
+    {
+        // attempt reconnect
+        m_tcpClient->connect();
+        return true;
+    }
+
+    // receive available data and wrap into a DatagramUdp (generic raw payload container)
+    if (m_tcpClient->getAvailableBytesCount() > 0)
+    {
+        string data = m_tcpClient->receiveBytes();
+        shared_ptr<DatagramUdp> datagram(new DatagramUdp(getName(), m_remoteIp, m_port, data));
+        appendToDistribution(datagram);
+        somethingDone = true;
+    }
+
+    // send outgoing payloads
+    if (m_incommingDatagrams.begin() != m_incommingDatagrams.end())
+    {
+        shared_ptr<DatagramUdp> castPtr = dynamic_pointer_cast<DatagramUdp>(m_incommingDatagrams.front());
+        m_incommingDatagrams.pop_front();
+        if (castPtr != nullptr && m_tcpClient->isConnected())
+        {
+            m_tcpClient->transmit(castPtr->getPayload());
+            somethingDone = true;
+        }
+    }
+
+    return somethingDone;
 }
 catch (exception & e)
 {
@@ -104,13 +152,17 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief placeDatagram is a function to place a Datagram here.
+ * @brief placeDatagram accepts DatagramUdp datagrams and queues them for TCP transmission
  *
  * @param datagram A Datagram containing data for this Plag to interprete
  */
 void PlagTcp::placeDatagram(const shared_ptr<Datagram> datagram) try
 {
-    
+    const shared_ptr<DatagramUdp> castPtr = dynamic_pointer_cast<DatagramUdp>(datagram);
+    if (castPtr != nullptr)
+    {
+        m_incommingDatagrams.push_back(datagram);
+    }
 }
 catch (exception & e)
 {

@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagLoraWan.hpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Holds the PlagLoraWan class
  * @version 0.1
@@ -23,14 +23,22 @@
 #define PLAGLORAWAN_HPP
 
 // std includes
+#include <string>
+#include <thread>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
 #include "Plag.hpp"
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief The PlagLoraWan class is a Plag to interact with LoRaWAN networks
- * 
+ * @brief The PlagLoraWan class is a Plag to receive data from LoRaWAN networks via HTTP webhooks
+ *
+ * @details Acts as an HTTP webhook receiver compatible with The Things Network (TTN) and
+ * Chirpstack. It listens on a configurable port for JSON POST requests and translates the
+ * decoded LoRaWAN payload into a Datagram for distribution.
  */
 class PlagLoraWan : public Plag
 {
@@ -48,11 +56,17 @@ public:
     virtual void placeDatagram(const std::shared_ptr<Datagram> datagram);
 
 private:
+    void runWebhookServer();
+    void handleWebhook(boost::asio::ip::tcp::socket socket);
 
 private:
     // config parameters
-    
+    uint16_t m_port;            //!< port to listen for incoming LoRaWAN webhooks
+    std::string m_secret;       //!< optional shared secret for basic validation
+
     // worker members
+    boost::asio::io_context m_ioContext;        //!< io_context for the webhook HTTP server
+    std::shared_ptr<std::thread> m_serverThread;//!< thread running the acceptor loop
 };
 
 #endif // PLAGLORAWAN_HPP

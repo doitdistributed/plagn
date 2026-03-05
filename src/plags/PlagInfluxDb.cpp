@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagInfluxDb.cpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Implements the PlagInfluxDb class
  * @version 0.1
@@ -21,13 +21,20 @@
 
 // std include
 #include <iostream>
+#include <sstream>
+#include <string>
+
+// boost includes
+#include <boost/asio.hpp>
 
 // own includes
+#include "DatagramUdp.hpp"
 
 // self include
 #include "PlagInfluxDb.hpp"
 
 using namespace std;
+using boost::asio::ip::tcp;
 
 /**
  *-------------------------------------------------------------------------------------------------
@@ -53,12 +60,17 @@ PlagInfluxDb::~PlagInfluxDb()
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief reads many optional parameters from config and assigns them to member values
+ * @brief reads configuration: host, port, database/bucket, measurement, optional v2 token/org
  * 
  */
 void PlagInfluxDb::readConfig() try
 {
-
+    m_host = getOptionalParameter<string>("host", "localhost");
+    m_port = getOptionalParameter<uint16_t>("port", 8086);
+    m_database = getParameter<string>("database");
+    m_measurement = getOptionalParameter<string>("measurement", "plagn");
+    m_token = getOptionalParameter<string>("token", string(""));
+    m_org = getOptionalParameter<string>("org", string(""));
 }
 catch (exception & e)
 {
@@ -70,12 +82,19 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagInfluxDb::init() configures the interface
+ * @brief PlagInfluxDb::init() verifies connectivity to the InfluxDB endpoint
  * 
  */
 void PlagInfluxDb::init() try
 {
-
+    // attempt a test connection to make sure InfluxDB is reachable at startup
+    boost::asio::io_context ioContext;
+    tcp::resolver resolver(ioContext);
+    tcp::resolver::results_type endpoints = resolver.resolve(m_host, to_string(m_port));
+    tcp::socket socket(ioContext);
+    boost::asio::connect(socket, endpoints);
+    socket.close();
+    cout << "PlagInfluxDb: reached InfluxDB at " << m_host << ":" << m_port << endl;
 }
 catch (exception & e)
 {
@@ -87,12 +106,34 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagInfluxDb::loopWork regularly reads on the socket, if data popped in or sends data
+ * @brief PlagInfluxDb::loopWork sends any queued datagrams to InfluxDB as line protocol
  * 
  */
 bool PlagInfluxDb::loopWork() try
 {
-    return false;
+    if (m_incommingDatagrams.begin() == m_incommingDatagrams.end())
+    {
+        return false;
+    }
+
+    shared_ptr<Datagram> datagram = m_incommingDatagrams.front();
+    m_incommingDatagrams.pop_front();
+
+    // Build InfluxDB line protocol: measurement,tag_key=tag_value field_key=field_value timestamp
+    // We use the payload from a DatagramUdp as a pre-formed line protocol string if available,
+    // otherwise we use the datagram's toString() and let the user pre-format it via a Kable.
+    string lineData;
+    shared_ptr<DatagramUdp> udpPtr = dynamic_pointer_cast<DatagramUdp>(datagram);
+    if (udpPtr != nullptr)
+    {
+        lineData = udpPtr->getPayload();
+    }
+    else
+    {
+        lineData = m_measurement + " value=" + datagram->toString();
+    }
+
+    return postLineProtocol(lineData);
 }
 catch (exception & e)
 {
@@ -104,13 +145,73 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief placeDatagram is a function to place a Datagram here.
+ * @brief postLineProtocol sends a single line of InfluxDB line protocol via HTTP POST
+ *
+ * @param lineData the fully-formed InfluxDB line protocol string
+ * @return true if the server returned HTTP 204
+ * @return false on failure
+ */
+bool PlagInfluxDb::postLineProtocol(const string & lineData) try
+{
+    boost::asio::io_context ioContext;
+    tcp::resolver resolver(ioContext);
+    tcp::resolver::results_type endpoints = resolver.resolve(m_host, to_string(m_port));
+    tcp::socket socket(ioContext);
+    boost::asio::connect(socket, endpoints);
+
+    // build the HTTP POST request
+    string path;
+    string authHeader;
+    if (!m_token.empty())
+    {
+        // InfluxDB v2
+        path = "/api/v2/write?org=" + m_org + "&bucket=" + m_database + "&precision=ns";
+        authHeader = "Authorization: Token " + m_token + "\r\n";
+    }
+    else
+    {
+        // InfluxDB v1
+        path = "/write?db=" + m_database;
+        authHeader = "";
+    }
+
+    string request = "POST " + path + " HTTP/1.1\r\n"
+                     "Host: " + m_host + "\r\n"
+                     + authHeader +
+                     "Content-Type: application/octet-stream\r\n"
+                     "Content-Length: " + to_string(lineData.size()) + "\r\n"
+                     "Connection: close\r\n"
+                     "\r\n"
+                     + lineData;
+
+    boost::asio::write(socket, boost::asio::buffer(request));
+
+    // read the status line
+    boost::asio::streambuf responseBuf;
+    boost::asio::read_until(socket, responseBuf, "\r\n");
+    istream responseStream(&responseBuf);
+    string httpVersion, statusMessage;
+    unsigned int statusCode;
+    responseStream >> httpVersion >> statusCode;
+    getline(responseStream, statusMessage);
+
+    return (statusCode == 204 || statusCode == 200);
+}
+catch (exception & e)
+{
+    cerr << "PlagInfluxDb: failed to post - " << e.what() << endl;
+    return false;
+}
+
+/**
+ *-------------------------------------------------------------------------------------------------
+ * @brief placeDatagram accepts any Datagram and queues it for writing to InfluxDB
  *
  * @param datagram A Datagram containing data for this Plag to interprete
  */
 void PlagInfluxDb::placeDatagram(const shared_ptr<Datagram> datagram) try
 {
-    
+    m_incommingDatagrams.push_back(datagram);
 }
 catch (exception & e)
 {

@@ -1,7 +1,7 @@
 /**
  *-------------------------------------------------------------------------------------------------
  * @file PlagMcp.cpp
- * @author plagn AI Assitant
+ * @author Gerrit Erichsen (saxomophon@gmx.de)
  * @contributors:
  * @brief Implements the PlagMcp class
  * @version 0.1
@@ -21,8 +21,15 @@
 
 // std include
 #include <iostream>
+#include <sstream>
+
+// boost includes
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 // own includes
+#include "DatagramMcp.hpp"
+#include "TcpClient.hpp"
 
 // self include
 #include "PlagMcp.hpp"
@@ -43,17 +50,32 @@ PlagMcp::PlagMcp(const boost::property_tree::ptree & propTree,
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief Destroy the PlagMcp object
+ * @brief Destroy the PlagMcp object; disconnects the TCP client
  * 
  */
 PlagMcp::~PlagMcp()
 {
     if (!m_stopToken) stopWork();
+    try
+    {
+        if (m_tcpClient && m_tcpClient->isConnected())
+        {
+            m_tcpClient->disconnect();
+        }
+    }
+    catch (exception & e)
+    {
+        cerr << "Could not close PlagMcp, because of " << e.what() << endl;
+    }
+    catch (...)
+    {
+        cerr << "Could not close PlagMcp, because for unknown reason!" << endl;
+    }
 }
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief reads many optional parameters from config and assigns them to member values
+ * @brief reads configuration parameters: serverIp and port
  * 
  */
 void PlagMcp::readConfig() try
@@ -71,12 +93,12 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagMcp::init() configures the interface
+ * @brief PlagMcp::init() creates the TCP client and connects to the MCP server
  * 
  */
 void PlagMcp::init() try
 {
-    m_tcpClient = std::make_shared<TcpClient>(std::chrono::milliseconds(1000), *this, m_serverIp, m_port);
+    m_tcpClient = make_shared<TcpClient>(chrono::milliseconds(1000), *this, m_serverIp, m_port);
     m_tcpClient->connect();
 }
 catch (exception & e)
@@ -86,35 +108,48 @@ catch (exception & e)
     runtime_error eEdited(errorMsg);
     throw eEdited;
 }
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
-// ... (rest of the includes)
-
-// ... (constructor and destructor)
-
-// ... (readConfig and init)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief PlagMcp::loopWork regularly reads on the socket, if data popped in or sends data
+ * @brief PlagMcp::loopWork reads incoming JSON-RPC messages and dispatches outgoing ones
  * 
  */
 bool PlagMcp::loopWork() try
 {
-    if (m_tcpClient->isConnected() && m_tcpClient->getAvailableBytesCount() > 0)
+    bool somethingDone = false;
+
+    if (!m_tcpClient->isConnected())
     {
-        std::string response = m_tcpClient->receiveBytes();
-        
-        // Parse the JSON response
+        m_tcpClient->connect();
+        return true;
+    }
+
+    // receive and dispatch incoming MCP messages
+    if (m_tcpClient->getAvailableBytesCount() > 0)
+    {
+        string response = m_tcpClient->receiveBytes();
         boost::property_tree::ptree pt;
-        std::stringstream ss(response);
+        stringstream ss(response);
         boost::property_tree::read_json(ss, pt);
 
-        // For now, just print the received JSON
-        std::cout << "Received MCP message: " << response << std::endl;
+        shared_ptr<DatagramMcp> datagram(new DatagramMcp(getName(), response));
+        appendToDistribution(datagram);
+        somethingDone = true;
     }
-    return false;
+
+    // send outgoing MCP messages
+    if (m_incommingDatagrams.begin() != m_incommingDatagrams.end())
+    {
+        shared_ptr<DatagramMcp> castPtr = dynamic_pointer_cast<DatagramMcp>(m_incommingDatagrams.front());
+        m_incommingDatagrams.pop_front();
+        if (castPtr != nullptr && m_tcpClient->isConnected())
+        {
+            m_tcpClient->transmit(castPtr->getJson());
+            somethingDone = true;
+        }
+    }
+
+    return somethingDone;
 }
 catch (exception & e)
 {
@@ -126,18 +161,16 @@ catch (exception & e)
 
 /**
  *-------------------------------------------------------------------------------------------------
- * @brief placeDatagram is a function to place a Datagram here.
+ * @brief placeDatagram accepts only DatagramMcp datagrams and queues them for transmission
  *
  * @param datagram A Datagram containing data for this Plag to interprete
  */
 void PlagMcp::placeDatagram(const shared_ptr<Datagram> datagram) try
 {
-    if (auto mcpDatagram = std::dynamic_pointer_cast<DatagramMcp>(datagram))
+    const shared_ptr<DatagramMcp> castPtr = dynamic_pointer_cast<DatagramMcp>(datagram);
+    if (castPtr != nullptr)
     {
-        if (m_tcpClient->isConnected())
-        {
-            m_tcpClient->transmit(mcpDatagram->getJson());
-        }
+        m_incommingDatagrams.push_back(datagram);
     }
 }
 catch (exception & e)
