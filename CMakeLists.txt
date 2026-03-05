@@ -63,3 +63,34 @@ target_include_directories(plagn PRIVATE src)
 
 # link library collection
 target_link_libraries(plagn ${LIBS})
+
+# testing setup
+enable_testing()
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+
+file(GLOB TEST_SOURCES "test/plags/*.cpp")
+
+if(TEST_SOURCES)
+    # We shouldn't include src/main.cpp in the tests if it has its own main().
+    # We will exclude src/main.cpp from the SOURCES variable for tests.
+    file(GLOB TEST_CORE_SOURCES "src/Kable.cpp"
+                                "src/Plag.cpp"
+                                "src/utils/*.cpp"
+                                "src/datagrams/*.cpp"
+                                "src/layer/*.cpp"
+                                "src/plags/*.cpp"
+                                "src/servers/*.cpp"
+                                "src/plags/mqtt/*.cpp")
+    
+    # We need a dedicated test executable
+    add_executable(plagn_tests test/test_main.cpp ${TEST_SOURCES} ${TEST_CORE_SOURCES})
+    target_include_directories(plagn_tests PRIVATE include
+                                             include/datagrams
+                                             include/utils
+                                             include/layer
+                                             include/plags
+                                             include/servers
+                                             include/plags/mqtt)
+    target_link_libraries(plagn_tests ${LIBS} Boost::unit_test_framework)
+    add_test(NAME AllTests COMMAND plagn_tests)
+endif()

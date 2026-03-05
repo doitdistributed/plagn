@@ -32,6 +32,18 @@
 #include "PlagMqtt.hpp"
 #include "PlagUdp.hpp"
 #include "PlagHttpServer.hpp"
+#include "PlagCoap.hpp"
+#include "PlagWebSocket.hpp"
+#include "PlagTcp.hpp"
+#include "PlagSerial.hpp"
+#include "PlagBle.hpp"
+#include "PlagModbus.hpp"
+#include "PlagOpcua.hpp"
+#include "PlagAmqp.hpp"
+#include "PlagInfluxDb.hpp"
+#include "PlagPrometheus.hpp"
+#include "PlagLoraWan.hpp"
+#include "PlagMcp.hpp"
 #include "Utilities.hpp"
 
 using namespace std;
@@ -145,6 +157,66 @@ int main(int argc, char * argv[])
             else if (type == "httpserver")
             {
                 shared_ptr<Plag> sharedPlag(new PlagHttpServer(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "coap")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagCoap(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "websocket")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagWebSocket(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "tcp")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagTcp(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "serial")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagSerial(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "ble")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagBle(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "modbus")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagModbus(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "opcua")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagOpcua(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "amqp")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagAmqp(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "influxdb")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagInfluxDb(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "prometheus")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagPrometheus(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "lorawan")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagLoraWan(propertyTree, name, index));
+                allPlags.insert_or_assign(name, sharedPlag);
+            }
+            else if (type == "mcp")
+            {
+                shared_ptr<Plag> sharedPlag(new PlagMcp(propertyTree, name, index));
                 allPlags.insert_or_assign(name, sharedPlag);
             }
             index++;

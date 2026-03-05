@@ -39,6 +39,18 @@ enum PlagType : unsigned int
     UDP,
     HttpServer,
     MQTT,
+    CoAP,
+    WebSocket,
+    TCP,
+    Serial,
+    BLE,
+    Modbus,
+    OPCUA,
+    AMQP,
+    InfluxDb,
+    Prometheus,
+    LoRaWAN,
+    MCP,
     none = UINT_MAX
 };
 
