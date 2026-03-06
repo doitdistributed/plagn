@@ -13,6 +13,7 @@
         "boost-regex",
         "boost-serialization",
         "boost-system",
+        "boost-test",
         "boost-thread",
         "openssl",
         "lua",
