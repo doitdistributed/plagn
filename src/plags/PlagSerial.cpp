@@ -21,8 +21,11 @@
 
 // std include
 #include <iostream>
+#ifndef _WIN32
 #include <sys/ioctl.h>
-
+#else
+#include <windows.h>
+#endif
 // own includes
 #include "DatagramUdp.hpp"
 
@@ -125,7 +128,14 @@ bool PlagSerial::loopWork() try
     boost::asio::serial_port_base::baud_rate opt;
     boost::system::error_code ec;
     int bytesAvailable = 0;
+#ifndef _WIN32
     ::ioctl(m_serialPort.native_handle(), FIONREAD, &bytesAvailable);
+#else
+    COMSTAT comStat;
+    DWORD errors;
+    ClearCommError(m_serialPort.native_handle(), &errors, &comStat);
+    bytesAvailable = comStat.cbInQue;
+#endif
 
     if (bytesAvailable > 0)
     {
