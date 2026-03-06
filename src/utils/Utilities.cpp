@@ -231,7 +231,7 @@ unsigned int convertDataTypeToUint(const DataType & value, unsigned int defaultV
             {
                 throw std::invalid_argument("Expected unsigned number. Got string: " + valueAsStr);
             }
-            return convertDataTypeToUint(stoul(valueAsStr, nullptr, 0));
+            return convertDataTypeToUint(static_cast<unsigned int>(stoul(valueAsStr, nullptr, 0)));
         }
     case plagn::MAP:
         {
