@@ -38,6 +38,8 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost REQUIRED COMPONENTS thread chrono date_time regex serialization system filesystem program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${Boost_LIBRARIES})
+add_definitions(-DBOOST_BIND_GLOBAL_PLACEHOLDERS)
+
 
 # libcoap (installed via vcpkg — has a proper CMake config)
 find_package(libcoap REQUIRED)
