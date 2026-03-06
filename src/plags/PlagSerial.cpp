@@ -21,16 +21,18 @@
 
 // std include
 #include <iostream>
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#else
-#include <windows.h>
-#endif
+
 // own includes
 #include "DatagramUdp.hpp"
 
 // self include
 #include "PlagSerial.hpp"
+
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/ioctl.h>
+#endif
 
 using namespace std;
 
