@@ -35,8 +35,6 @@ jobs:
       if: runner.os == 'macOS'
       run: brew install autoconf autoconf-archive automake libtool
 
-    - name: Setup Ninja
-      uses: ninja-build/setup-ninja@v1
 
     - name: Configure CMake
       shell: bash
